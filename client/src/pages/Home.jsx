@@ -108,7 +108,7 @@ function Home() {
         </button>
       </form>
 
-      {/* DISPLAY NG MGA LISTS */}
+    
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         {lists.length === 0 ? (
           <p style={{ color: 'gray' }}>No lists found. Create one above!</p>

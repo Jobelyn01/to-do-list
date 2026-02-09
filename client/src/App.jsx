@@ -11,7 +11,7 @@ function App() {
   const [isRegistering, setIsRegistering] = useState(false);
   
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const API_URL = import.meta.env.VITE_API_URL || "https://to-do-list-nut2.onrender.com";
 
   const handleSubmit = async (e) => {
     e.preventDefault();

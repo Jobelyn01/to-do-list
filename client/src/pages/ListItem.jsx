@@ -8,7 +8,7 @@ function ListItem() {
     const [items, setItems] = useState([]);
     const [listInfo, setListInfo] = useState(null);
     const [newItem, setNewItem] = useState("");
-    const API = "http://localhost:3000";
+    const API = "https://to-do-list-nut2.onrender.com";
 
     const loadData = () => {
         axios.get(`${API}/get-items/${id}`, { withCredentials: true }).then(res => {
