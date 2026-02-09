@@ -9,7 +9,7 @@ function Home() {
   const navigate = useNavigate();
   
   // Siguraduhin na tama ang port ng iyong backend
-  const API = "http://localhost:3000";
+  const API = "https://to-do-list-nut2.onrender.com";
 
   const fetchLists = async () => {
     try {
