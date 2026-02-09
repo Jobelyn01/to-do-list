@@ -5,31 +5,33 @@ import cors from 'cors';
 import bcrypt from 'bcrypt';
 
 const app = express();
-const PORT = 3000;
+// Gamitin ang process.env.PORT para sa Render
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-
+// Inalis ang "/" sa dulo ng Vercel URL dahil maselan ang CORS
 app.use(cors({
-  origin: 'https://to-do-list-woad-mu.vercel.app/',
+  origin: 'https://to-do-list-woad-mu.vercel.app', 
   credentials: true
 }));
 
+// Session settings para sa Production
+app.set('trust proxy', 1); // Kailangan ito sa Render/Heroku/Vercel
 app.use(
   session({
     name: 'user-session',
-    secret: 'superSecretKey',
+    secret: process.env.SESSION_SECRET || 'superSecretKey', // Mas mainam kung galing sa env
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, 
-      sameSite: "lax",
+      secure: true, // TRUE dapat dahil naka-HTTPS ang Render at Vercel
+      sameSite: "none", // NONE para gumana kahit magkaiba ang domain ng frontend at backend
       maxAge: 1000 * 60 * 60, 
     },
   })
 );
-
 
 const requireLogin = (req, res, next) => {
   if (!req.session.user) {
@@ -38,8 +40,7 @@ const requireLogin = (req, res, next) => {
   next();
 };
 
-
-
+// MALI YUNG DATI: Huwag isama ang Render URL sa app.post() route
 app.post('/register', async (req, res) => {
   try {
     const { username, password, confirm } = req.body;
@@ -52,25 +53,6 @@ app.post('/register', async (req, res) => {
       [username, hashedPassword, username]
     );
     res.json({ success: true, message: "Registered successfully!" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-app.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const result = await pool.query('SELECT * FROM user_accounts WHERE username = $1', [username]);
-
-    if (result.rows.length === 0) return res.status(401).json({ success: false, message: "User not found" });
-
-    const user = result.rows[0];
-    const isOk = await bcrypt.compare(password, user.password);
-
-    if (!isOk) return res.status(401).json({ success: false, message: "Wrong password" });
-
-    req.session.user = { id: user.id, username: user.username, name: user.name };
-    res.json({ success: true, message: "Login success" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
