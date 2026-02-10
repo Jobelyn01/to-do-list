@@ -7,46 +7,128 @@ function App() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState({ text: "", type: "" });
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const endpoint = isRegistering ? "/register" : "/login";
-      const payload = isRegistering ? { username, password, confirm: confirmPassword } : { username, password };
-      const res = await api.post(endpoint, payload);
+    setMessage({ text: "", type: "" });
 
+    const endpoint = isRegistering ? "/register" : "/login";
+    const payload = isRegistering
+      ? { username, password, confirm: confirmPassword }
+      : { username, password };
+
+    try {
+      const res = await api.post(endpoint, payload);
       if (res.data.success) {
+        setMessage({ text: res.data.message, type: "success" });
+
         if (isRegistering) {
+          // Switch to login form after successful registration
           setIsRegistering(false);
           setUsername("");
           setPassword("");
           setConfirmPassword("");
-          setMessage("Registered successfully! Please login.");
         } else {
-          navigate("/home");
+          // Redirect to dashboard after login
+          setTimeout(() => navigate("/home"), 800);
         }
       }
     } catch (err) {
-      setMessage("Error: Invalid credentials or server error.");
+      const errMsg = err.response?.data?.message || "Something went wrong";
+      setMessage({ text: errMsg, type: "error" });
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-pink-50">
-      <div className="bg-white/90 backdrop-blur p-8 rounded-3xl shadow-xl w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-4 text-center">{isRegistering ? "Register" : "Login"}</h1>
-        {message && <p className="text-center text-pink-600 mb-4">{message}</p>}
+      <div className="w-full max-w-md bg-white/90 backdrop-blur-lg rounded-3xl p-8 shadow-xl">
+        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
+          {isRegistering ? "Create Account" : "Welcome Back"}
+        </h1>
+        <p className="text-center text-gray-500 mb-6">
+          {isRegistering
+            ? "Register to get started"
+            : "Login to your account"}
+        </p>
+
+        {message.text && (
+          <div
+            className={`mb-4 p-3 rounded ${
+              message.type === "success" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" required value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" className="w-full px-4 py-2 border rounded-xl outline-none" />
-          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full px-4 py-2 border rounded-xl outline-none" />
-          {isRegistering && <input type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm Password" className="w-full px-4 py-2 border rounded-xl outline-none" />}
-          <button type="submit" className="w-full bg-pink-400 text-white py-2 rounded-xl font-bold hover:bg-pink-500 transition">{isRegistering ? "Register" : "Login"}</button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Username
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter username"
+              required
+              className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+              required
+              className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 outline-none"
+            />
+          </div>
+
+          {isRegistering && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm password"
+                required
+                className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-400 outline-none"
+              />
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-gradient-to-r from-pink-400 to-pink-600 text-white py-2 rounded-xl font-semibold hover:opacity-90 transition"
+          >
+            {isRegistering ? "Register Now" : "Login"}
+          </button>
         </form>
-        <p className="text-center mt-4 text-gray-500">
+
+        <p className="text-center text-sm text-gray-500 mt-6">
           {isRegistering ? "Already have an account?" : "No account yet?"}{" "}
-          <button className="text-pink-500 font-semibold" onClick={() => setIsRegistering(!isRegistering)}>{isRegistering ? "Login" : "Sign Up"}</button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsRegistering(!isRegistering);
+              setMessage({ text: "", type: "" });
+            }}
+            className="text-pink-600 font-medium hover:underline"
+          >
+            {isRegistering ? "Login here" : "Sign up"}
+          </button>
         </p>
       </div>
     </div>
