@@ -13,7 +13,7 @@ function Home() {
   const loadLists = async () => {
     try {
       const res = await api.get("/get-list");
-      setLists(res.data.list);
+      setLists(res.data.list || []);
     } catch (err) {
       if (err.response?.status === 401) {
         navigate("/");
@@ -27,8 +27,7 @@ function Home() {
 
   const addList = async (e) => {
     e.preventDefault();
-    if (!title) return;
-
+    if (!title.trim()) return;
     await api.post("/add-list", { title });
     setTitle("");
     loadLists();
@@ -40,6 +39,8 @@ function Home() {
   };
 
   const saveEdit = async (id) => {
+    if (!editTitle.trim()) return;
+
     await api.put(`/edit-list/${id}`, {
       title: editTitle,
       description: ""
@@ -55,91 +56,114 @@ function Home() {
     loadLists();
   };
 
+  const logout = async () => {
+    try {
+      await api.post("/logout");
+    } catch {}
+    navigate("/");
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-8">
-      <div className="max-w-3xl mx-auto bg-white/90 backdrop-blur rounded-3xl p-8 shadow-xl">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-6">
+      <div className="max-w-4xl mx-auto">
 
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">My To-Do Lists</h1>
-          <button
-            onClick={async () => {
-              await api.post("/logout");
-              navigate("/");
-            }}
-            className="text-sm text-red-500 font-semibold"
-          >
-            Logout
-          </button>
-        </div>
+        <div className="bg-white/20 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/30">
 
-        <form onSubmit={addList} className="flex gap-2 mb-6">
-          <input
-            className="flex-1 px-4 py-2 rounded-xl border outline-none"
-            placeholder="New list name..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <button className="px-5 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-indigo-500 to-purple-600">
-            Add
-          </button>
-        </form>
-
-        <div className="space-y-4">
-          {lists.length === 0 && (
-            <p className="text-center text-gray-500">No lists yet.</p>
-          )}
-
-          {lists.map((l) => (
-            <div
-              key={l.id}
-              className="flex justify-between items-center p-4 rounded-2xl bg-white shadow"
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold text-white tracking-wide">
+              My To-Do Lists
+            </h1>
+            <button
+              onClick={logout}
+              className="text-white/80 hover:text-white text-sm"
             >
+              Logout
+            </button>
+          </div>
+
+          <form
+            onSubmit={addList}
+            className="flex gap-3 mb-8"
+          >
+            <input
+              className="flex-1 px-5 py-3 rounded-xl bg-white/90 outline-none focus:ring-4 focus:ring-purple-300"
+              placeholder="Create new list..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+
+            <button
+              className="px-6 py-3 rounded-xl font-semibold text-white
+                         bg-gradient-to-r from-indigo-500 to-purple-600
+                         hover:scale-105 transition"
+            >
+              Add
+            </button>
+          </form>
+
+          <div className="grid sm:grid-cols-2 gap-5">
+            {lists.length === 0 && (
+              <p className="text-white/80 col-span-full text-center">
+                No lists yet.
+              </p>
+            )}
+
+            {lists.map((l) => (
               <div
-                className="flex-1 cursor-pointer"
-                onClick={() => navigate(`/list/${l.id}`)}
+                key={l.id}
+                className="group bg-white/90 rounded-2xl p-5 shadow-lg
+                           hover:-translate-y-1 transition"
               >
-                {editing === l.id ? (
-                  <input
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    className="border px-2 py-1 rounded w-full"
-                  />
-                ) : (
-                  <>
-                    <h3 className="font-bold text-lg">{l.title}</h3>
-                    <p className="text-sm text-gray-500">
-                      {l.item_count} items
-                    </p>
-                  </>
-                )}
-              </div>
-
-              <div className="flex gap-2 ml-4">
-                {editing === l.id ? (
-                  <button
-                    onClick={() => saveEdit(l.id)}
-                    className="text-green-600 font-semibold"
-                  >
-                    Save
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => startEdit(l)}
-                    className="text-indigo-600 font-semibold"
-                  >
-                    Edit
-                  </button>
-                )}
-
-                <button
-                  onClick={() => deleteList(l.id)}
-                  className="text-red-500 font-semibold"
+                <div
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/list/${l.id}`)}
                 >
-                  Delete
-                </button>
+                  {editing === l.id ? (
+                    <input
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full border rounded-lg px-2 py-1"
+                    />
+                  ) : (
+                    <>
+                      <h3 className="font-bold text-xl text-gray-800">
+                        {l.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {l.item_count ?? 0} tasks
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex gap-4 mt-4 justify-end text-sm">
+                  {editing === l.id ? (
+                    <button
+                      onClick={() => saveEdit(l.id)}
+                      className="text-green-600 font-semibold"
+                    >
+                      Save
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => startEdit(l)}
+                      className="text-indigo-600 font-semibold"
+                    >
+                      Edit
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => deleteList(l.id)}
+                    className="text-red-500 font-semibold"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
         </div>
 
       </div>

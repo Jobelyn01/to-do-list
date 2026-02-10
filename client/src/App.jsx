@@ -7,11 +7,17 @@ function App() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isRegistering && password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
 
     const endpoint = isRegistering ? "/register" : "/login";
 
@@ -20,89 +26,120 @@ function App() {
       : { username, password };
 
     try {
-      const res = await api.post(endpoint, payload);
+      setLoading(true);
 
-      if (res.data.success) {
+      const response = await api.post(endpoint, payload);
 
+      if (response.data.success) {
         if (isRegistering) {
           alert("Registered successfully. Please login.");
-
           setIsRegistering(false);
           setUsername("");
           setPassword("");
           setConfirmPassword("");
-
         } else {
-
           navigate("/home");
         }
       }
-    } catch (err) {
-      const msg = err.response?.data?.message || "Something went wrong";
-      alert(msg);
+
+    } catch (error) {
+      const message =
+        error.response?.data?.message || "Something went wrong";
+      alert(message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500">
-      <div className="w-full max-w-md bg-white/90 backdrop-blur rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-6">
 
-        <h1 className="text-3xl font-bold text-center mb-2">
+      <div className="w-full max-w-md bg-white/20 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/30">
+
+        <h1 className="text-3xl font-bold text-white text-center mb-2">
           {isRegistering ? "Create Account" : "Welcome Back"}
         </h1>
 
-        <p className="text-center text-gray-500 mb-6">
+        <p className="text-center text-white/80 mb-8">
           {isRegistering
-            ? "Register to get started"
-            : "Please login to your account"}
+            ? "Create your account to start managing your tasks"
+            : "Login to your to-do dashboard"}
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
 
-          <input
-            className="w-full px-4 py-2 border rounded-lg outline-none"
-            placeholder="Username"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            required
-          />
+          <div>
+            <label className="text-white text-sm">
+              Username
+            </label>
+            <input
+              type="text"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="mt-1 w-full px-4 py-3 rounded-xl bg-white/90 outline-none
+                         focus:ring-4 focus:ring-purple-300"
+              placeholder="Enter username"
+            />
+          </div>
 
-          <input
-            type="password"
-            className="w-full px-4 py-2 border rounded-lg outline-none"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
-
-          {isRegistering && (
+          <div>
+            <label className="text-white text-sm">
+              Password
+            </label>
             <input
               type="password"
-              className="w-full px-4 py-2 border rounded-lg outline-none"
-              placeholder="Confirm password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
               required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 w-full px-4 py-3 rounded-xl bg-white/90 outline-none
+                         focus:ring-4 focus:ring-purple-300"
+              placeholder="Enter password"
             />
+          </div>
+
+          {isRegistering && (
+            <div>
+              <label className="text-white text-sm">
+                Confirm password
+              </label>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="mt-1 w-full px-4 py-3 rounded-xl bg-white/90 outline-none
+                           focus:ring-4 focus:ring-purple-300"
+                placeholder="Confirm password"
+              />
+            </div>
           )}
 
           <button
-            className="w-full py-2 rounded-lg text-white font-semibold
-                       bg-gradient-to-r from-indigo-500 to-purple-600"
+            disabled={loading}
+            className="w-full py-3 rounded-xl text-white font-semibold
+                       bg-gradient-to-r from-indigo-500 to-purple-600
+                       hover:scale-105 transition disabled:opacity-60"
           >
-            {isRegistering ? "Register" : "Login"}
+            {loading
+              ? "Please wait..."
+              : isRegistering
+                ? "Register"
+                : "Login"}
           </button>
+
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
-          {isRegistering ? "Already have an account?" : "No account yet?"}{" "}
+        <p className="text-center text-white/80 text-sm mt-8">
+          {isRegistering
+            ? "Already have an account?"
+            : "Don't have an account?"}{" "}
           <button
-            onClick={() => setIsRegistering(!isRegistering)}
-            className="text-indigo-600 font-semibold"
             type="button"
+            onClick={() => setIsRegistering(!isRegistering)}
+            className="text-white font-semibold underline"
           >
-            {isRegistering ? "Login" : "Register"}
+            {isRegistering ? "Login here" : "Register here"}
           </button>
         </p>
 

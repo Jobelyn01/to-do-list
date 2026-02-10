@@ -9,16 +9,19 @@ function ListItem() {
   const [items, setItems] = useState([]);
   const [listInfo, setListInfo] = useState(null);
   const [newItem, setNewItem] = useState("");
-  const [editing, setEditing] = useState(null);
+
+  const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
 
   const loadData = async () => {
     try {
       const res = await api.get(`/get-items/${id}`);
-      setItems(res.data.items);
-      setListInfo(res.data.listInfo);
+      setItems(res.data.items || []);
+      setListInfo(res.data.listInfo || null);
     } catch (err) {
-      if (err.response?.status === 401) navigate("/");
+      if (err.response?.status === 401) {
+        navigate("/");
+      }
     }
   };
 
@@ -28,106 +31,137 @@ function ListItem() {
 
   const addItem = async (e) => {
     e.preventDefault();
-    if (!newItem) return;
+    if (!newItem.trim()) return;
 
-    await api.post("/add-item", { listId: id, title: newItem });
+    await api.post("/add-item", {
+      listId: id,
+      title: newItem
+    });
+
     setNewItem("");
     loadData();
   };
 
-  const deleteItem = async (itemId) => {
-    await api.delete(`/delete-item/${itemId}`);
-    loadData();
-  };
-
   const startEdit = (item) => {
-    setEditing(item.id);
+    setEditingId(item.id);
     setEditTitle(item.title);
   };
 
   const saveEdit = async (itemId) => {
+    if (!editTitle.trim()) return;
+
     await api.put(`/edit-item/${itemId}`, {
-      title: editTitle,
-      status: "pending"
+      title: editTitle
     });
 
-    setEditing(null);
+    setEditingId(null);
+    loadData();
+  };
+
+  const deleteItem = async (itemId) => {
+    if (!window.confirm("Delete this task?")) return;
+    await api.delete(`/delete-item/${itemId}`);
     loadData();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-8">
-      <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur rounded-3xl p-8 shadow-xl">
+    <div className="min-h-screen bg-gradient-to-br from-pink-500 via-purple-600 to-indigo-600 p-6">
+      <div className="max-w-3xl mx-auto">
 
-        <button
-          onClick={() => navigate("/home")}
-          className="text-sm text-gray-500 mb-6"
-        >
-          ← Back
-        </button>
+        <div className="bg-white/20 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/30">
 
-        {listInfo && (
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold">{listInfo.title}</h1>
-          </div>
-        )}
-
-        <form onSubmit={addItem} className="flex gap-2 mb-6">
-          <input
-            className="flex-1 px-4 py-2 rounded-xl border outline-none"
-            placeholder="New task..."
-            value={newItem}
-            onChange={(e) => setNewItem(e.target.value)}
-          />
-          <button className="px-5 py-2 rounded-xl text-white font-semibold bg-gradient-to-r from-indigo-500 to-purple-600">
-            Add
+          <button
+            onClick={() => navigate("/home")}
+            className="text-white/80 hover:text-white text-sm mb-6"
+          >
+            ← Back
           </button>
-        </form>
 
-        <div className="space-y-3">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex justify-between items-center p-4 bg-white rounded-2xl shadow"
-            >
-              <div className="flex-1">
-                {editing === item.id ? (
-                  <input
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    className="border px-2 py-1 rounded w-full"
-                  />
-                ) : (
-                  <span className="text-lg">{item.title}</span>
-                )}
-              </div>
-
-              <div className="flex gap-3 ml-4">
-                {editing === item.id ? (
-                  <button
-                    onClick={() => saveEdit(item.id)}
-                    className="text-green-600 font-semibold"
-                  >
-                    Save
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => startEdit(item)}
-                    className="text-indigo-600 font-semibold"
-                  >
-                    Edit
-                  </button>
-                )}
-
-                <button
-                  onClick={() => deleteItem(item.id)}
-                  className="text-red-500 font-semibold"
-                >
-                  Delete
-                </button>
-              </div>
+          {listInfo && (
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-white">
+                {listInfo.title}
+              </h1>
+              {listInfo.description && (
+                <p className="text-white/70 mt-1">
+                  {listInfo.description}
+                </p>
+              )}
             </div>
-          ))}
+          )}
+
+          <form onSubmit={addItem} className="flex gap-3 mb-8">
+            <input
+              className="flex-1 px-5 py-3 rounded-xl bg-white/90 outline-none focus:ring-4 focus:ring-purple-300"
+              placeholder="Add new task..."
+              value={newItem}
+              onChange={(e) => setNewItem(e.target.value)}
+            />
+
+            <button
+              className="px-6 py-3 rounded-xl font-semibold text-white
+                         bg-gradient-to-r from-indigo-500 to-purple-600
+                         hover:scale-105 transition"
+            >
+              Add
+            </button>
+          </form>
+
+          <div className="space-y-4">
+            {items.length === 0 && (
+              <p className="text-white/80 text-center">
+                No tasks yet.
+              </p>
+            )}
+
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white/90 rounded-2xl p-4 flex justify-between items-center
+                           shadow hover:shadow-lg transition"
+              >
+                <div className="flex-1">
+                  {editingId === item.id ? (
+                    <input
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full border rounded-lg px-2 py-1"
+                    />
+                  ) : (
+                    <span className="text-gray-800 text-lg">
+                      {item.title}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-4 ml-4 text-sm">
+                  {editingId === item.id ? (
+                    <button
+                      onClick={() => saveEdit(item.id)}
+                      className="text-green-600 font-semibold"
+                    >
+                      Save
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => startEdit(item)}
+                      className="text-indigo-600 font-semibold"
+                    >
+                      Edit
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => deleteItem(item.id)}
+                    className="text-red-500 font-semibold"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
 
       </div>
