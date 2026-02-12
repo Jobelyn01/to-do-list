@@ -151,6 +151,16 @@ app.post("/add-item", auth, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false }); }
 });
 
+// EDIT ITEM
+app.put("/edit-item/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  const { title } = req.body;
+  try {
+    await pool.query("UPDATE items SET title=$1 WHERE id=$2", [title, id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false }); }
+});
+
 // DELETE ITEM
 app.delete("/delete-item/:id", auth, async (req, res) => {
   const { id } = req.params;
