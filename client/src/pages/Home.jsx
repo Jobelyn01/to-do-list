@@ -32,137 +32,161 @@ function Home() {
       await api.post("/add-list", { title: newList });
       setNewList("");
       loadLists();
-      setMessage({ text: "List added successfully!", type: "success" });
+      setMessage({ text: "Success! New list created.", type: "success" });
+      setTimeout(() => setMessage({ text: "", type: "" }), 3000);
     } catch (err) {
       setMessage({ text: "Failed to add list", type: "error" });
     }
   };
 
-  const startEdit = (list) => {
+  const startEdit = (e, list) => {
+    e.stopPropagation(); // Para hindi mag-trigger ang navigate pag pinindot ang edit
     setEditingId(list.id);
     setEditingTitle(list.title);
   };
 
-  const saveEdit = async (id) => {
+  const saveEdit = async (e, id) => {
+    e.stopPropagation();
     try {
-      await api.put(`/edit-list/${id}`, { title: editingTitle, description: "" });
+      await api.put(`/edit-list/${id}`, { title: editingTitle });
       setEditingId(null);
       loadLists();
-      setMessage({ text: "List updated!", type: "success" });
+      setMessage({ text: "List title updated!", type: "success" });
+      setTimeout(() => setMessage({ text: "", type: "" }), 3000);
     } catch {
       setMessage({ text: "Failed to update list", type: "error" });
     }
   };
 
-  const deleteList = async (id) => {
-    if (!window.confirm("Delete this list?")) return;
+  const deleteList = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm("Delete this entire list?")) return;
     try {
       await api.delete(`/delete-list/${id}`);
       loadLists();
-      setMessage({ text: "List deleted!", type: "success" });
+      setMessage({ text: "List deleted.", type: "success" });
+      setTimeout(() => setMessage({ text: "", type: "" }), 3000);
     } catch {
       setMessage({ text: "Failed to delete list", type: "error" });
     }
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 p-8">
-      <div className="max-w-3xl mx-auto bg-white/90 backdrop-blur-lg rounded-3xl p-8 shadow-xl">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">My To-Do Lists</h1>
+    <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-10 text-slate-900">
+      <div className="max-w-5xl mx-auto">
+        
+        {/* Header Section */}
+        <header className="flex justify-between items-center mb-10">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+              My Workspace
+            </h1>
+            <p className="text-slate-500 font-medium mt-1">Manage your daily goals efficiently.</p>
+          </div>
           <button
             onClick={async () => {
               await api.post("/logout");
               navigate("/");
             }}
-            className="text-sm text-red-500 font-semibold"
+            className="px-6 py-2 border border-rose-100 text-rose-500 font-bold rounded-2xl hover:bg-rose-50 transition-all active:scale-95"
           >
             Logout
           </button>
-        </div>
+        </header>
 
+        {/* Feedback Message */}
         {message.text && (
-          <div
-            className={`mb-4 p-3 rounded ${
-              message.type === "success"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
-          >
-            {message.text}
+          <div className={`mb-8 p-4 rounded-2xl animate-in slide-in-from-top-2 duration-300 border ${
+            message.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-rose-50 text-rose-700 border-rose-100"
+          }`}>
+            <p className="font-semibold">{message.text}</p>
           </div>
         )}
 
-        {/* Add new list */}
-        <form onSubmit={addList} className="flex gap-2 mb-6">
-          <input
-            value={newList}
-            onChange={(e) => setNewList(e.target.value)}
-            placeholder="New list title..."
-            className="flex-1 px-4 py-2 rounded-xl border outline-none focus:ring-2 focus:ring-pink-300"
-          />
-          <button className="px-5 py-2 bg-gradient-to-r from-pink-400 to-pink-600 text-white rounded-xl font-semibold hover:opacity-90 transition">
-            Add
-          </button>
-        </form>
+        {/* Add New List Card */}
+        <section className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-12">
+          <h2 className="text-lg font-bold mb-4 text-slate-700 ml-1">Create New List</h2>
+          <form onSubmit={addList} className="flex flex-col md:flex-row gap-3">
+            <input
+              value={newList}
+              onChange={(e) => setNewList(e.target.value)}
+              placeholder="e.g. Shopping List, Work Projects..."
+              className="flex-1 px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-lg"
+            />
+            <button className="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95">
+              Create List
+            </button>
+          </form>
+        </section>
 
-        {/* List display */}
-        <div className="space-y-4">
-          {lists.length === 0 && (
-            <p className="text-center text-gray-500">No lists yet.</p>
-          )}
-
-          {lists.map((l) => (
-            <div
-              key={l.id}
-              className="flex justify-between items-center p-4 rounded-2xl bg-white shadow"
-            >
-              <div
-                className="flex-1 cursor-pointer"
-                onClick={() => navigate(`/list/${l.id}`)}
-              >
-                {editingId === l.id ? (
-                  <input
-                    value={editingTitle}
-                    onChange={(e) => setEditingTitle(e.target.value)}
-                    className="border px-2 py-1 rounded w-full"
-                  />
-                ) : (
-                  <>
-                    <h3 className="font-bold text-lg">{l.title}</h3>
-                    <p className="text-sm text-gray-500">
-                      {l.item_count} items
-                    </p>
-                  </>
-                )}
-              </div>
-
-              <div className="flex gap-2 ml-4">
-                {editingId === l.id ? (
-                  <button
-                    onClick={() => saveEdit(l.id)}
-                    className="text-green-600 font-semibold"
-                  >
-                    Save
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => startEdit(l)}
-                    className="text-indigo-600 font-semibold"
-                  >
-                    Edit
-                  </button>
-                )}
-
-                <button
-                  onClick={() => deleteList(l.id)}
-                  className="text-red-500 font-semibold"
-                >
-                  Delete
-                </button>
-              </div>
+        {/* Lists Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {lists.length === 0 ? (
+            <div className="col-span-full text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
+               <p className="text-slate-400 font-medium text-lg">No lists found. Start by creating one!</p>
             </div>
-          ))}
+          ) : (
+            lists.map((l) => (
+              <div
+                key={l.id}
+                onClick={() => navigate(`/list/${l.id}`)}
+                className="group bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 cursor-pointer relative flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 transition-colors duration-300">
+                      <span className="text-xl group-hover:scale-110 transition-transform">📋</span>
+                    </div>
+                  </div>
+
+                  {editingId === l.id ? (
+                    <input
+                      autoFocus
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.key === "Enter" && saveEdit(e, l.id)}
+                      className="w-full bg-slate-50 px-3 py-2 rounded-xl border-b-2 border-indigo-500 outline-none font-bold text-xl mb-2"
+                    />
+                  ) : (
+                    <h3 className="font-extrabold text-xl text-slate-800 mb-1 line-clamp-1 group-hover:text-indigo-600 transition-colors">
+                      {l.title}
+                    </h3>
+                  )}
+                  
+                  <p className="text-slate-400 font-medium">
+                    {l.item_count || 0} Task{l.item_count !== "1" ? 's' : ''}
+                  </p>
+                </div>
+
+                {/* Card Actions */}
+                <div className="mt-8 flex items-center justify-between border-t border-slate-50 pt-4">
+                  {editingId === l.id ? (
+                    <button 
+                      onClick={(e) => saveEdit(e, l.id)} 
+                      className="text-indigo-600 font-bold hover:underline"
+                    >
+                      Save
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={(e) => startEdit(e, l)} 
+                      className="text-slate-400 hover:text-indigo-600 font-bold transition-colors"
+                    >
+                      Rename
+                    </button>
+                  )}
+                  
+                  <button 
+                    onClick={(e) => deleteList(e, l.id)} 
+                    className="text-slate-400 hover:text-rose-500 font-bold transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
