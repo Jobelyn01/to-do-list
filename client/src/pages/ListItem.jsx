@@ -37,15 +37,15 @@ function ListItem() {
     setTimeout(() => setMsg({ text: "", type: "" }), 3000);
   };
 
-  // 2. ADD ITEM - Siguradong tatawag ng loadItems() pagkatapos mag-save
   const addItem = async (e) => {
     e.preventDefault();
     if (!newItem.trim()) return;
     try {
-      const res = await api.post("/add-item", { listId, title: newItem });
+      // Changed: Wrapped listId in parseInt()
+      const res = await api.post("/add-item", { listId: parseInt(listId), title: newItem });
       if (res.data.success) {
         setNewItem(""); 
-        await loadItems(); // Eto ang magpapakita ng task agad sa screen!
+        await loadItems();
         showToast("Task added! ✨");
       }
     } catch (err) { 
