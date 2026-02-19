@@ -37,21 +37,37 @@ function ListItem() {
     setTimeout(() => setMsg({ text: "", type: "" }), 3000);
   };
 
-  const addItem = async (e) => {
-    e.preventDefault();
-    if (!newItem.trim()) return;
-    try {
-      // Changed: Wrapped listId in parseInt()
-      const res = await api.post("/add-item", { listId: parseInt(listId), title: newItem });
-      if (res.data.success) {
-        setNewItem(""); 
-        await loadItems();
-        showToast("Task added! ✨");
-      }
-    } catch (err) { 
-      showToast("Error adding task", "error"); 
+ const addItem = async (e) => {
+  e.preventDefault();
+  if (!newItem.trim()) return;
+
+  // Debug: See what listId actually is in your browser console
+  console.log("Current listId from URL:", listId);
+
+  try {
+    const idToSend = Number(listId); // Convert string "13" to number 13
+    
+    if (isNaN(idToSend)) {
+      showToast("Invalid List ID", "error");
+      return;
     }
-  };
+
+    const res = await api.post("/add-item", { 
+      listId: idToSend, 
+      title: newItem 
+    });
+
+    if (res.data.success) {
+      setNewItem(""); 
+      await loadItems();
+      showToast("Task added! ✨");
+    }
+  } catch (err) { 
+    // This triggers the red "Error adding task" box
+    console.error("Server Error:", err.response?.data || err.message);
+    showToast("Error adding task", "error"); 
+  }
+};
 
   const saveEditItem = async (itemId) => {
     if (!editingItemTitle.trim()) return setEditingItemId(null);
