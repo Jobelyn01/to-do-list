@@ -22,26 +22,30 @@ function App() {
     }
 
     const endpoint = isRegistering ? "/register" : "/login";
+    // MATCHING BACKEND: confirmPassword is sent as 'confirm'
+    const payload = isRegistering 
+      ? { username, password, confirm: confirmPassword } 
+      : { username, password };
+
     try {
-      const res = await api.post(endpoint, { username, password });
+      const res = await api.post(endpoint, payload);
       if (res.data.success) {
         if (isRegistering) {
-          showToast("Account created! Please login. ✨");
+          showToast("Account created! Login now. ✨");
           setIsRegistering(false);
-          setConfirmPassword("");
         } else {
           showToast("Welcome back! 🚀");
           setTimeout(() => navigate("/home"), 1000);
         }
       }
     } catch (err) {
-      const errMsg = err.response?.data?.message || "Invalid credentials.";
+      const errMsg = err.response?.data?.message || "Action failed.";
       showToast(errMsg, "error");
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center p-6 font-sans">
+    <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center p-6 font-sans text-slate-800">
       {msg.text && (
         <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 rounded-2xl shadow-2xl font-bold text-white ${msg.type === 'error' ? 'bg-rose-500' : 'bg-slate-800'} animate-bounce`}>
           {msg.text}
@@ -59,8 +63,8 @@ function App() {
             {isRegistering ? "Create Account" : "Sign In"}
           </button>
         </form>
-        <button onClick={() => { setIsRegistering(!isRegistering); setConfirmPassword(""); }} className="w-full mt-8 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-900">
-          {isRegistering ? "Already have an account? Login" : "New here? Create an account"}
+        <button onClick={() => { setIsRegistering(!isRegistering); setConfirmPassword(""); }} className="w-full mt-8 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-900 transition-colors">
+          {isRegistering ? "Back to Login" : "New here? Create an account"}
         </button>
       </div>
     </div>
