@@ -10,6 +10,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
 app.set("trust proxy", 1); 
 
 app.use(express.json());
@@ -33,23 +34,25 @@ app.use(session({
   },
 }));
 
+
 function auth(req, res, next) {
   if (!req.session.userId) return res.status(401).json({ success: false, message: "Unauthorized" });
   next();
 }
 
-// --- AUTH ROUTES ---
 app.post("/register", async (req, res) => {
   const { username, password, confirm } = req.body;
   if (!username || !password || password !== confirm) {
-    return res.status(400).json({ success: false, message: "Invalid input or passwords don't match" });
+    return res.status(400).json({ success: false, message: "Invalid input" });
   }
   try {
     const hash = await bcrypt.hash(password, 10);
+  
     await pool.query("INSERT INTO user_accounts(username, password) VALUES($1, $2)", [username, hash]);
     res.json({ success: true, message: "Registered successfully" });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Username might be taken." });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Registration failed" });
   }
 });
 
@@ -66,6 +69,7 @@ app.post("/login", async (req, res) => {
     req.session.userId = user.id;
     res.json({ success: true });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: "Login failed" });
   }
 });
@@ -77,7 +81,7 @@ app.post("/logout", (req, res) => {
   });
 });
 
-// --- LIST & ITEM ROUTES ---
+
 app.get("/get-list", auth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -88,34 +92,79 @@ app.get("/get-list", auth, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false }); }
 });
 
-app.get("/get-items/:id", auth, async (req, res) => {
-  const listId = parseInt(req.params.id);
-  if (isNaN(listId)) return res.status(400).json({ success: false, message: "Invalid ID" });
+
+
+app.post("/add-list", auth, async (req, res) => {
+  const { title } = req.body;
+  const userId = req.session.userId; 
 
   try {
-    const items = await pool.query("SELECT * FROM items WHERE list_id=$1 ORDER BY id ASC", [listId]);
-    const listInfo = await pool.query("SELECT * FROM list WHERE id=$1 AND user_id=$2", [listId, req.session.userId]);
-    res.json({ items: items.rows, listInfo: listInfo.rows[0] || { title: "Board" } });
+    console.log(`Adding list for User ID: ${userId}`); 
+    await pool.query(
+      "INSERT INTO list(title, user_id) VALUES($1, $2)", 
+      [title, userId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("DATABASE ERROR:", err.message); 
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
+app.put("/edit-list/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  const { title } = req.body;
+  await pool.query("UPDATE list SET title=$1 WHERE id=$2 AND user_id=$3", [title, id, req.session.userId]);
+  res.json({ success: true });
+});
+
+
+app.put("/edit-item/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  const { title } = req.body;
+  await pool.query("UPDATE items SET title=$1 WHERE id=$2", [title, id]);
+  res.json({ success: true });
+});
+
+app.delete("/delete-list/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  try {
+   
+    await pool.query("DELETE FROM items WHERE list_id=$1", [id]);
+    await pool.query("DELETE FROM list WHERE id=$1 AND user_id=$2", [id, req.session.userId]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false }); }
+});
+
+
+app.get("/get-items/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const items = await pool.query("SELECT * FROM items WHERE list_id=$1 ORDER BY id ASC", [id]);
+    const listInfo = await pool.query("SELECT * FROM list WHERE id=$1 AND user_id=$2", [id, req.session.userId]);
+    res.json({ items: items.rows, listInfo: listInfo.rows[0] });
   } catch (err) { res.status(500).json({ success: false }); }
 });
 
 app.post("/add-item", auth, async (req, res) => {
   const { listId, title } = req.body;
-  const cleanId = parseInt(listId);
-
-  if (isNaN(cleanId)) {
-    console.error("REJECTED: listId is", listId);
-    return res.status(400).json({ success: false, message: "Valid List ID required" });
-  }
-
   try {
-    await pool.query("INSERT INTO items(list_id, title) VALUES($1, $2)", [cleanId, title]);
+    await pool.query("INSERT INTO items(list_id, title) VALUES($1, $2)", [listId, title]);
     res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false });
-  }
+  } catch (err) { res.status(500).json({ success: false }); }
 });
+
+
+app.put("/edit-item/:id", auth, async (req, res) => {
+  const { id } = req.params;
+  const { title } = req.body;
+  try {
+    await pool.query("UPDATE items SET title=$1 WHERE id=$2", [title, id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false }); }
+});
+
 
 app.delete("/delete-item/:id", auth, async (req, res) => {
   const { id } = req.params;
