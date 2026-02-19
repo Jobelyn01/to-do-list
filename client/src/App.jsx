@@ -18,17 +18,24 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    
     if (isRegistering && password !== confirmPassword) {
       return showToast("Passwords do not match!", "error");
     }
 
     const endpoint = isRegistering ? "/register" : "/login";
     
-    
+    // --- EXACT MATCH FOR YOUR index.js ---
+    // Ginamit ang 'confirm' bilang key dahil iyon ang nasa index.js mo
     const payload = isRegistering 
-      ? { username, password, confirm: confirmPassword } 
-      : { username, password };
+      ? { 
+          username: username, 
+          password: password, 
+          confirm: confirmPassword 
+        } 
+      : { 
+          username: username, 
+          password: password 
+        };
 
     try {
       const res = await api.post(endpoint, payload);
@@ -37,15 +44,13 @@ function App() {
           showToast("Account created! Please login. ✨");
           setIsRegistering(false);
           setConfirmPassword("");
-          setUsername("");
-          setPassword("");
         } else {
           showToast("Welcome back! 🚀");
           setTimeout(() => navigate("/home"), 1000);
         }
       }
     } catch (err) {
-      const errMsg = err.response?.data?.message || "Action failed.";
+      const errMsg = err.response?.data?.message || "Authentication failed.";
       showToast(errMsg, "error");
     }
   };
@@ -58,21 +63,19 @@ function App() {
         </div>
       )}
       <div className="w-full max-w-md bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-100">
-        <h1 className="text-4xl font-black text-center text-slate-900 mb-8 tracking-tight">My Tasks</h1>
+        <h1 className="text-4xl font-black text-center text-slate-900 mb-8 tracking-tight">Task Corner</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-slate-200" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} required />
           <input type="password" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-slate-200" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-          
           {isRegistering && (
             <input type="password" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-slate-200" placeholder="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
           )}
-          
-          <button className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-lg mt-4 shadow-lg hover:bg-black transition-all active:scale-95">
+          <button className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-lg mt-4 shadow-lg hover:bg-black transition-all active:scale-95 uppercase tracking-tight">
             {isRegistering ? "Create Account" : "Sign In"}
           </button>
         </form>
-        <button onClick={() => { setIsRegistering(!isRegistering); setConfirmPassword(""); }} className="w-full mt-8 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-900">
-          {isRegistering ? "Already have an account? Login" : "New here? Create an account"}
+        <button onClick={() => { setIsRegistering(!isRegistering); setConfirmPassword(""); }} className="w-full mt-8 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-900 transition-colors">
+          {isRegistering ? "Back to Login" : "Create an Account"}
         </button>
       </div>
     </div>

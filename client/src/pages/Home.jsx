@@ -38,7 +38,7 @@ function App() {
           setIsRegistering(false);
           setConfirmPassword("");
         } else {
-          showToast("Welcome to Focus Hub! 🚀");
+          showToast("Welcome to Task Corner! 🚀");
           setTimeout(() => navigate("/home"), 1000);
         }
       }
@@ -57,7 +57,7 @@ function App() {
       )}
 
       <div className="w-full max-w-md bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-100">
-        <h1 className="text-4xl font-black text-center text-slate-900 mb-8 tracking-tight">Focus Hub</h1>
+        <h1 className="text-4xl font-black text-center text-slate-900 mb-8 tracking-tight">Task Corner</h1>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <input 
