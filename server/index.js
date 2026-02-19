@@ -112,13 +112,26 @@ app.delete("/delete-list/:id", auth, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false }); }
 });
 
+// SA INDEX.JS (BACKEND)
 app.get("/get-items/:id", auth, async (req, res) => {
   const { id } = req.params;
   try {
+    // Kunin ang items base lang sa list_id
     const items = await pool.query("SELECT * FROM items WHERE list_id=$1 ORDER BY id ASC", [id]);
-    const listInfo = await pool.query("SELECT * FROM list WHERE id=$1 AND user_id=$2", [id, req.session.userId]);
-    res.json({ items: items.rows, listInfo: listInfo.rows[0] });
-  } catch (err) { res.status(500).json({ success: false }); }
+    
+    // Kunin ang list info nang hindi muna tinitignan ang user_id para sa debug
+    const listInfo = await pool.query("SELECT * FROM list WHERE id=$1", [id]);
+    
+    console.log(`Found ${items.rows.length} items for list ${id}`); // Lalabas ito sa Render logs
+    
+    res.json({ 
+      items: items.rows, 
+      listInfo: listInfo.rows[0] || { title: "Unknown Board" } 
+    });
+  } catch (err) { 
+    console.error(err);
+    res.status(500).json({ success: false }); 
+  }
 });
 
 app.post("/add-item", auth, async (req, res) => {
