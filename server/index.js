@@ -38,7 +38,7 @@ function auth(req, res, next) {
   next();
 }
 
-// REGISTER FIX: Hinihingi ang 'confirm' field
+// --- AUTH ROUTES ---
 app.post("/register", async (req, res) => {
   const { username, password, confirm } = req.body;
   if (!username || !password || password !== confirm) {
@@ -49,7 +49,6 @@ app.post("/register", async (req, res) => {
     await pool.query("INSERT INTO user_accounts(username, password) VALUES($1, $2)", [username, hash]);
     res.json({ success: true, message: "Registered successfully" });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ success: false, message: "Username might be taken." });
   }
 });
@@ -78,6 +77,7 @@ app.post("/logout", (req, res) => {
   });
 });
 
+// --- LIST & ITEM ROUTES ---
 app.get("/get-list", auth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -88,79 +88,33 @@ app.get("/get-list", auth, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false }); }
 });
 
-app.post("/add-list", auth, async (req, res) => {
-  const { title } = req.body;
-  try {
-    await pool.query("INSERT INTO list(title, user_id) VALUES($1, $2)", [title, req.session.userId]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ success: false }); }
-});
-
-app.put("/edit-list/:id", auth, async (req, res) => {
-  const { id } = req.params;
-  const { title } = req.body;
-  await pool.query("UPDATE list SET title=$1 WHERE id=$2 AND user_id=$3", [title, id, req.session.userId]);
-  res.json({ success: true });
-});
-
-app.delete("/delete-list/:id", auth, async (req, res) => {
-  const { id } = req.params;
-  try {
-    await pool.query("DELETE FROM items WHERE list_id=$1", [id]);
-    await pool.query("DELETE FROM list WHERE id=$1 AND user_id=$2", [id, req.session.userId]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ success: false }); }
-});
-
-// SA INDEX.JS (BACKEND)
 app.get("/get-items/:id", auth, async (req, res) => {
-  const { id } = req.params;
+  const listId = parseInt(req.params.id);
+  if (isNaN(listId)) return res.status(400).json({ success: false, message: "Invalid ID" });
+
   try {
-    // Kunin ang items base lang sa list_id
-    const items = await pool.query("SELECT * FROM items WHERE list_id=$1 ORDER BY id ASC", [id]);
-    
-    // Kunin ang list info nang hindi muna tinitignan ang user_id para sa debug
-    const listInfo = await pool.query("SELECT * FROM list WHERE id=$1", [id]);
-    
-    console.log(`Found ${items.rows.length} items for list ${id}`); // Lalabas ito sa Render logs
-    
-    res.json({ 
-      items: items.rows, 
-      listInfo: listInfo.rows[0] || { title: "Unknown Board" } 
-    });
-  } catch (err) { 
-    console.error(err);
-    res.status(500).json({ success: false }); 
-  }
+    const items = await pool.query("SELECT * FROM items WHERE list_id=$1 ORDER BY id ASC", [listId]);
+    const listInfo = await pool.query("SELECT * FROM list WHERE id=$1 AND user_id=$2", [listId, req.session.userId]);
+    res.json({ items: items.rows, listInfo: listInfo.rows[0] || { title: "Board" } });
+  } catch (err) { res.status(500).json({ success: false }); }
 });
 
 app.post("/add-item", auth, async (req, res) => {
   const { listId, title } = req.body;
+  const cleanId = parseInt(listId);
 
-  // DEBUG: Tingnan natin sa Render logs kung ano ang dumarating
-  console.log("Adding item to list:", listId);
-
-  // VALIDATION: Kung undefined ang listId, huwag ituloy ang query
-  if (!listId || listId === "undefined") {
-    return res.status(400).json({ success: false, message: "List ID is required" });
+  if (isNaN(cleanId)) {
+    console.error("REJECTED: listId is", listId);
+    return res.status(400).json({ success: false, message: "Valid List ID required" });
   }
 
   try {
-    await pool.query("INSERT INTO items(list_id, title) VALUES($1, $2)", [listId, title]);
+    await pool.query("INSERT INTO items(list_id, title) VALUES($1, $2)", [cleanId, title]);
     res.json({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false });
   }
-});
-
-app.put("/edit-item/:id", auth, async (req, res) => {
-  const { id } = req.params;
-  const { title } = req.body;
-  try {
-    await pool.query("UPDATE items SET title=$1 WHERE id=$2", [title, id]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ success: false }); }
 });
 
 app.delete("/delete-item/:id", auth, async (req, res) => {
