@@ -136,10 +136,22 @@ app.get("/get-items/:id", auth, async (req, res) => {
 
 app.post("/add-item", auth, async (req, res) => {
   const { listId, title } = req.body;
+
+  // DEBUG: Tingnan natin sa Render logs kung ano ang dumarating
+  console.log("Adding item to list:", listId);
+
+  // VALIDATION: Kung undefined ang listId, huwag ituloy ang query
+  if (!listId || listId === "undefined") {
+    return res.status(400).json({ success: false, message: "List ID is required" });
+  }
+
   try {
     await pool.query("INSERT INTO items(list_id, title) VALUES($1, $2)", [listId, title]);
     res.json({ success: true });
-  } catch (err) { res.status(500).json({ success: false }); }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
 });
 
 app.put("/edit-item/:id", auth, async (req, res) => {
