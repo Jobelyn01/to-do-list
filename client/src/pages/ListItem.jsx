@@ -36,21 +36,26 @@ function ListItem() {
   };
 
   // 2. ADD ITEM: Pagka-save sa Neon, hihilahin ulit ang data
-  const addItem = async (e) => {
-    e.preventDefault();
-    if (!newItem.trim()) return;
+ const addItem = async (e) => {
+  e.preventDefault();
+  if (!newItem.trim()) return;
 
-    try {
-      const res = await api.post("/add-item", { listId, title: newItem });
-      if (res.data.success) {
-        setNewItem(""); 
-        await loadItems(); // ETO ANG MAGPAPAKITA NG TASK AGAD!
-        showToast("Task added! ✨");
-      }
-    } catch (err) {
-      showToast("Error adding task", "error");
+  try {
+    // SIGURADUHIN na 'listId' (galing sa useParams) ang ipinapadala
+    const res = await api.post("/add-item", { 
+      listId: listId, // Dapat may value ito (hal. 13)
+      title: newItem 
+    });
+    
+    if (res.data.success) {
+      setNewItem("");
+      await loadItems(); // Refresh the list
+      showToast("Task added! ✨");
     }
-  };
+  } catch (err) {
+    console.error("Add error:", err);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] p-10 font-sans">
