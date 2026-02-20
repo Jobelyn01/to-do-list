@@ -24,8 +24,7 @@ function App() {
 
     const endpoint = isRegistering ? "/register" : "/login";
     
-    // --- EXACT MATCH FOR YOUR index.js ---
-    // Ginamit ang 'confirm' bilang key dahil iyon ang nasa index.js mo
+    
     const payload = isRegistering 
       ? { 
           username: username, 
@@ -75,7 +74,7 @@ function App() {
           </button>
         </form>
         <button onClick={() => { setIsRegistering(!isRegistering); setConfirmPassword(""); }} className="w-full mt-8 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-900 transition-colors">
-          {isRegistering ? "Back to Login" : "Create an Account"}
+          {isRegistering ? "Already have an account? Login" : "New here? Create an Account"}
         </button>
       </div>
     </div>
