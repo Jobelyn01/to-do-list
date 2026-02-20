@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../api"; // Siguraduhin na tama ang path papunta sa api.js mo
+import api from "../api"; 
 
 function ListItem() {
   const { listId } = useParams();
@@ -14,12 +14,11 @@ function ListItem() {
   const [editingItemId, setEditingItemId] = useState(null);
   const [editingItemTitle, setEditingItemTitle] = useState("");
 
-  // 1. LOAD ITEMS - Dito natin kukunin ang data mula sa index.js mo
+ 
   const loadItems = useCallback(async () => {
     try {
       const res = await api.get(`/get-items/${listId}`);
-      // Sa index.js mo, ang structure ay { items: [...], listInfo: {...} }
-      // Kaya kailangan res.data.items ang i-set natin
+      
       setItems(res.data.items || []); 
       setListTitle(res.data.listInfo?.title || "Board");
     } catch (err) { 
@@ -41,11 +40,11 @@ function ListItem() {
   e.preventDefault();
   if (!newItem.trim()) return;
 
-  // Debug: See what listId actually is in your browser console
+  
   console.log("Current listId from URL:", listId);
 
   try {
-    const idToSend = Number(listId); // Convert string "13" to number 13
+    const idToSend = Number(listId); 
     
     if (isNaN(idToSend)) {
       showToast("Invalid List ID", "error");
@@ -63,7 +62,7 @@ function ListItem() {
       showToast("Task added! ✨");
     }
   } catch (err) { 
-    // This triggers the red "Error adding task" box
+    
     console.error("Server Error:", err.response?.data || err.message);
     showToast("Error adding task", "error"); 
   }
