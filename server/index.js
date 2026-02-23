@@ -150,7 +150,7 @@ app.get("/get-items/:id", auth, async (req, res) => {
 app.post("/add-item", auth, async (req, res) => {
   const { listId, title } = req.body;
   try {
-    // Changed: Wrapped listId in parseInt() to ensure it's not NULL in Postgres
+   
     await pool.query("INSERT INTO items(list_id, title) VALUES($1, $2)", [parseInt(listId), title]);
     res.json({ success: true });
   } catch (err) { 
